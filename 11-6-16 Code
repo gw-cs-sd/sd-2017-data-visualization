@@ -1,0 +1,437 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.text.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class ReadCSV {
+
+    public static void main(String[] args) {
+
+    	String csvFile = "gfa25.csv";
+    	int max=20;
+    	DecimalFormat df = new DecimalFormat("#.###");
+    	
+    	String[][] list = csvReader(csvFile, max);
+    	double[] one = arrayToDouble(list, 1, 5);
+    	System.out.println(Arrays.toString(one));
+    	double[] two = arrayToDouble(list, 1, 4);
+    	String[] te = list[4];
+    	Arrays.sort(te);
+    	System.out.println("first " + te[te.length-1]);
+//    	double[] zero = arrayToDouble(list, 1, 0);
+    	System.out.println("The mean of row 3 is " + df.format(findMean(one)));
+    	System.out.println("The mean of row 4 is " + df.format(findMean(two)));
+//
+//    	range(one);
+//    	
+    	System.out.println("Correlation between one and two is %" + df.format(Correlation(one, two)*100));
+//    	System.out.println("Correlation between zero and two is %" + df.format(Correlation(two, zero)*100));
+//    	System.out.println("Correlation between zero and one is %" + df.format(Correlation(one, zero)*100));
+//    	
+//    	System.out.println(Arrays.toString(findNumRows(list)));
+//    	double[][] iList = to2dDouble(list);
+    	for (int x = 0; x < list.length; x++) {
+			System.out.println(Arrays.toString(list[x]));
+    	}
+    }
+    
+    public static double[][] to2dDouble(String[][] list){
+    	boolean[] iRows = findNumRows(list);
+    	int num = numTrue(iRows);
+    	double[][] iList = new double[num][list[0].length];
+    	int count=0;
+    	for(int x = 0; x<iRows.length;x++){
+    		if(iRows[x]){
+    			iList[count]= arrayToDouble(list, 1, x);
+    		}
+    	}
+    	return iList;
+    }
+    
+
+    public static int numTrue(boolean[] iRows){
+    	int num =0;
+    	for(int x =0; x<iRows.length; x++){
+    		if(iRows[x]){
+    			num++;
+    		}
+    	}
+    	return num;
+    }
+    public static boolean[] findNumRows(String[][] list){
+    	boolean[] iRows = new boolean[list.length];
+    	for(int x =0; x<list.length; x++){
+    		boolean temp = true;
+    		for(int y=1; y<15; y++){
+    			if(list[x].length>x+1){
+    				if(!list[x][y].matches("[-+]?\\d*\\.?\\d+")){
+    					if((list[x][y].matches("[A-Za-z]"))){
+    						temp = false;
+    					}
+    				}
+    				if((list[x][y].equals("--")) || (list[x][y].equals(null))) {
+    					temp = false;
+    				}
+    			}
+    		}
+    		iRows[x]=temp;
+    	}
+    	
+    	return iRows;
+    }
+    
+    public static double Correlation(double[] xs, double[] ys) {
+        //TODO: check here that arrays are not null, of the same length etc
+
+        double sx = 0.0;
+        double sy = 0.0;
+        double sxx = 0.0;
+        double syy = 0.0;
+        double sxy = 0.0;
+
+        int n = xs.length;
+
+        for(int i = 0; i < n; ++i) {
+          double x = xs[i];
+          double y = ys[i];
+
+          sx += x;
+          sy += y;
+          sxx += x * x;
+          syy += y * y;
+          sxy += x * y;
+        }
+
+        // covariation
+        double cov = sxy / n - sx * sy / n / n;
+        // standard error of x
+        double sigmax = Math.sqrt(sxx / n -  sx * sx / n / n);
+        // standard error of y
+        double sigmay = Math.sqrt(syy / n -  sy * sy / n / n);
+
+        // correlation is just a normalized covariation
+        return cov / sigmax / sigmay;
+      }
+    
+    public static double[] range(double[] temp){
+    	Arrays.sort(temp);
+    	
+    	double [] range = {temp[0], temp[temp.length-1]};
+//    	System.out.println(Arrays.toString(temp));
+//    	System.out.println(Arrays.toString(range));
+    	return range;
+    	
+    }
+    public static double min(double[] temp){
+    	Arrays.sort(temp);
+    	return temp[temp.length-1];
+    			
+    }
+    
+    public static double max(double[] temp){
+    	Arrays.sort(temp);
+    	return temp[0];
+    			
+    }
+    
+    public static double difference(double[] temp){
+    	Arrays.sort(temp);
+    	return  temp[0]- temp[temp.length-1];
+    			
+    }
+    
+    public static double findMean(double[] temp){
+    	double sum =0;
+    	for(int x =0; x<temp.length; x++){
+    		sum = sum + temp[x];
+    	}
+    	double length = temp.length;
+    	double mean = sum/length;
+    	return mean;
+    }
+    
+    public static double[] arrayToDouble(String[][] list, int start, int row){
+    	double[] temp = new double[list[row].length-start-1];
+    	for(int x = 0; x<temp.length; x++){
+    		if((!list[row][start+x].equals(null))&&(!Character.isLetter(list[row][start+x].charAt(0)))){
+
+    			temp[x] = Double.valueOf(list[row][start+x]);
+
+    		}
+
+    	}
+    	return temp;
+    }
+    
+
+    
+    public static String[][] csvReader(String csvFile, int max){
+    	BufferedReader br = null;
+    	String line = "";
+    	String cvsSplitBy = ",";
+    	int count =0;
+
+    	String[][] list = null;
+    	String[] one = null;
+    	String quotes = "\"";
+    	try {
+    		
+
+    		br = new BufferedReader(new FileReader(csvFile) );
+    		while (((line = br.readLine()) != null)&& count<max){
+    			
+				if (count == 0) {
+					String[] first = line.split(cvsSplitBy);
+					one = new String[first.length];
+					list = new String[one.length][max];
+				}
+				
+				String[] temp = line.split(cvsSplitBy);
+				for (int y = 0; y < one.length; y++) {
+					if(y< temp.length){
+					one[y] = temp[y];
+					}
+
+					
+					
+					
+				}
+
+				for (int x = 0; x < one.length; x++) {
+					if (one[x] != null)
+						list[x][count] = one[x];
+					else
+						list[x][count] = "-";
+				}
+
+				count++;
+
+			}
+//			for (int x = 0; x < list.length; x++) {
+//				System.out.println(Arrays.toString(list[x]));
+//			}
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+    		e.printStackTrace();
+    	} finally {
+    		if (br != null) {
+    			try {
+    				br.close();
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			}
+    		}
+    	}
+    	return list;
+
+    }
+    
+    public static String[] quoteFix(String[] temp, int y){
+    	int q=0;
+    	int x;
+    	for( x =0; x<temp.length-y;x++){
+    		for(int z =0; z<temp[y+x].length();z++){
+    			if(temp[y+x].charAt(z)=='"'){
+    				q++;
+    			}
+    			if(q ==2){
+    				break;
+    			}
+    		}
+    		if(q ==2){
+				break;
+			}
+    	}
+    	if(q!=2){
+    		return temp;
+    	}
+    	else{
+    		for(int a =1; a<=x; a++){
+    			temp[y]= temp[y].concat(temp[y+a]);
+    		}
+    		for(y = y+1; y+x<temp.length-1; y++){
+    			temp[y] = temp[y+x+1];
+    		}
+    	}
+    	return temp;
+    }
+
+}
+
+public class automate {
+
+	public static void main(String[] args) {
+		Data_base data = new Data_base();
+		
+		//Parameters:Database URL, username, password.
+		Connection c = data.connect("jdbc:mysql://localhost:3306/sakila", "root", "Goombie1!");
+		
+		//Second parameter: location of file to be imported.
+		data.importData(c, "C:/Users/Sam/Documents/crime.xls");
+	}
+}
+
+class Data_base {
+	
+	//default constructor.
+	public Data_base() {
+		//leave empty.
+	}
+	
+	public Connection connect(String db_connect_str, String db_userid, String db_password) {
+		Connection c;
+		
+		//connect to Database.
+		try {
+			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			c = DriverManager.getConnection(db_connect_str, db_userid, db_password);
+		}catch(Exception e) {
+			e.printStackTrace();
+			c = null;
+		}
+		
+		return c;
+	}
+	
+	//import file locally from computer, then read from database.
+	public void importData(Connection c, String file) {
+		Statement s;
+		double [] result = null;
+		String q;
+		
+		//import .csv, and other text domains to MySQL.
+		try {
+			s = c.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+  
+      //for importing TXT and XLS files.
+			//q = "LOAD DATA LOCAL INFILE '" + file + "' INTO TABLE datatable (PARAMETERS);";
+			
+			//for importing CSV files.
+			q = "LOAD DATA LOCAL INFILE '" + file "' INTO TABLE datatable FIELDS TERMINATED BY ',' (PARAMETERS)";
+			
+			s.executeUpdate(q);
+			
+		}catch(Exception e) {
+			
+			e.printStackTrace();
+			s = null;
+		}
+		
+		//read from MySQL to Java.
+		try {
+			Statement t = c.createStatement();
+			//while(list[column][0]) 
+			t.executeQuery("SELECT (COLUMN) FROM datatable");
+			ResultSet rs = t.getResultSet();
+			int counter = 0;
+			
+			while(rs.next()) {
+				result[counter] = rs.getDouble("(COLUMN NAME)");
+				counter++;
+			}
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			//t = null;
+		}
+		
+		sumStat(result);
+	}
+	
+	//compute summary statistics for the data at hand.
+	public void sumStat(double [] result) {
+		
+		double total = 0;
+		double mean = 0;
+		double median = 0;
+		double max = 0;
+		double range = 0;
+		double iqr = 0;
+		double inner_fence = 0;
+		double outer_fence = 0;
+		
+		//calculate mean.
+		for(int i=0; i<result.length; i++) {
+			total += result[i];
+		}
+		
+		mean = total/result.length;
+		
+		//calcuate median.
+		for(int i=0; i<result.length; i++) {
+			if(result.length % 2 == 0) {
+				median = result[result.length/2 + 1];
+			}
+			
+			else {
+				median = result[result.length/2];
+			}
+		}
+		
+		int count = 1;
+		int temp = count;
+		double value = 0;
+		
+		//calculate mode.
+		for(int i=0; i<result.length-1; i++) {
+			value = result[i];
+			temp = 0;
+			
+			for(int j=1; j<result.length; j++) {
+				if(value == result[j]) {
+					temp++;
+				}
+			}
+			
+			if(temp > count) {
+				max = value;
+				count = temp;
+			}
+		}
+		
+		double minimum = result[0];
+		double maximum = result[0];
+		
+		//calculate range.
+		for(int i=1; i<result.length; i++) {
+			if(result[i] < minimum) {
+				minimum = result[i];
+			}
+			
+			else if(result[i] > maximum) {
+				maximum = result[i];
+			}
+		}
+		
+		range = maximum - minimum;
+		
+		double lower;
+		double upper;
+		
+		//calculate iqr.
+		if(result.length % 4 != 0) {
+			lower = result[result.length/4 + 1];
+			upper = result[(result.length/4 * 3) + 1];
+		}
+		
+		else {
+			lower = result[result.length/4];
+			upper = result[result.length/4 * 3];
+		}
+		
+		iqr = upper - lower;
+		inner_fence = 1.5 * iqr;
+		outer_fence = 3 * iqr;
+	}
+};

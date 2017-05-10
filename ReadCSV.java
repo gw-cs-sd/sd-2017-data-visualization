@@ -37,6 +37,11 @@ import org.jfree.ui.RefineryUtilities;
 
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.functions.LinearRegression;
+import weka.classifiers.lazy.LWL;
+import weka.classifiers.meta.AdaBoostM1;
+import weka.classifiers.rules.OneR;
+import weka.classifiers.trees.DecisionStump;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -62,14 +67,16 @@ public class ReadCSV {
     static boolean sdchoice = false;
     static boolean variancechoice = false;
 
+    static int[] currentData;
+    
 	public static void main(String[] args) {
 
-    	String csvFile = "gfa25.csv";
-    	String csvFile2 = "us_state_emplchange_2011-2012.txt";
+//    	String csvFile = "gfa25.csv";
+//    	String csvFile2 = "us_state_emplchange_2011-2012.txt";
     	//String csvFile3 = "test-3.csv";
     	 
-    	int max=10000;
-    	DecimalFormat df = new DecimalFormat("#.###");
+ //   	int max=10000;
+ //   	DecimalFormat df = new DecimalFormat("#.###");
     	
     	JFrame jf = new JFrame("Menu");
  		final JFileChooser fc = new JFileChooser();
@@ -137,7 +144,7 @@ public class ReadCSV {
             				//System.out.println("Also selected: " + cb.getText()); 
             				
             				if(cb.getText().equals("Mean")) {
-            					//System.out.println("I may never make it to this point.");
+            					System.out.println("I may never make it to this point.");
                 				meanchoice = true; 
                 			}
                 			
@@ -312,6 +319,7 @@ public class ReadCSV {
 		String [][] list3 = csvReader(selectedFile, csv-1); 
 		char[] type3 = checkType(list3);
   		double [][] dList3 = to2dDouble(list3, type3); 
+
   		String[] names3 = nameList(list3, type3);
   		String[] time3 = getTime(list3, type3);
   		double [] results = decideGraph(time3, dList3);
@@ -330,15 +338,23 @@ public class ReadCSV {
   		
   		for(int a=0; a<results.length-1; a++) {
   			
-  			//System.out.println("Value of results array later at index " + a + "is: " + results[a]);
+  			System.out.println("Value of results array later at index " + a + "is: " + results[a]);
   			
   			if((results[a] > results[a+1]) && (results[a] > highest)) {
   				counter = a;
   				highest = results[a];
   			} 
+  			
+  			else if(results[a] < results[a+1]) {
+  				System.out.println("I've gotten inside the second else if statement!");
+  				System.out.println("The value of a+1 is: " + results[a+1]);
+  				counter = a+1;
+  				highest = results[a+1];
+  				System.out.println("The value of counter is: " + counter);
+  			}
   		}
   		
-  		//System.out.println("The value of counter is: " + counter);
+  		System.out.println("The value of counter is: " + counter);
   	  
   		graphNum =63;
   		
@@ -442,10 +458,8 @@ public class ReadCSV {
 			} 
   		}
   		
-  		counter = 3;
-  		
   		if(counter == 0) {
-  			list3 = csvReader(selectedFile, 20); 
+  			list3 = csvReader(selectedFile, csv); 
   			type3 = checkType(list3);
   	  		dList3 = to2dDouble(list3, type3);
   	  		names3 = nameList(list3, type3);
@@ -454,7 +468,7 @@ public class ReadCSV {
   	  		for(int x=0; x<dList3.length-1; x++) {
   				for(int y=x+1; y<dList3.length; y++) {
   					String title = names3[x] + " Vs " + names3[y];
-  					list3 = csvReader(selectedFile, 20); 
+  					list3 = csvReader(selectedFile, csv); 
   					type3 = checkType(list3);
   			  		dList3 = to2dDouble(list3, type3);
   			  		names3 = nameList(list3, type3);
@@ -476,7 +490,7 @@ public class ReadCSV {
   	  				String title = names3[x] + " Vs " + names3[y];
   	  				//System.out.println("Value of dList3 in x: " + dList3[x]);
   	  				//System.out.println("Value of dList3 in y: " + dList3[y]);
-  	  				list3 = csvReader(selectedFile, 20); 
+  	  				list3 = csvReader(selectedFile, csv); 
   	  				type3 = checkType(list3);
   	  		  		dList3 = to2dDouble(list3, type3);
   	  		  		names3 = nameList(list3, type3);
@@ -497,7 +511,7 @@ public class ReadCSV {
   			for(int x=0; x<dList3.length-1; x++) {
   				for(int y=x+1; y<dList3.length; y++) {
   					String title = names3[x] + " Vs " + names3[y];
-  					list3 = csvReader(selectedFile, 20); 
+  					list3 = csvReader(selectedFile, csv); 
   					type3 = checkType(list3);
   			  		dList3 = to2dDouble(list3, type3);
   			  		names3 = nameList(list3, type3);
@@ -514,17 +528,39 @@ public class ReadCSV {
   		}
 		
   		else if(counter == 3) {
-  			list3 = csvReader(selectedFile, 20); 
-  			type3 = checkType(list3);
-  	  		dList3 = to2dDouble(list3, type3);
-  	  		names3 = nameList(list3, type3);
-  	  		corAnalysis(dList3, names3);
+  			
+  			//System.out.println("I'm choosing the correct graph.");
   	  		
-  	  		pieModel(dList3, names3);
+  	  		//DecimalFormat df = new DecimalFormat("#.###");
+	 	
+  	  		//System.out.println("I've reached here!");
+	 	 
+  	  		for(int x=0; x<dList3.length-1; x++) {
+  	  			for(int y=x+1; y<dList3.length; y++) {
+  	  				String title = names3[x] + "Vs" + names3[y];
+  	  				list3 = csvReader(selectedFile, csv); 
+  	  				type3 = checkType(list3);
+  	  				dList3 = to2dDouble(list3, type3);
+  	  				names3 = nameList(list3, type3);
+  	  			    corAnalysis(dList3, names3);
+  	  				//System.out.println("Reached here as well!");
+  	  				//System.out.println("Value of dList3 in x: " + list[0]);
+  	  				//System.out.println("Value of dList3 in y: " + list[1]);
+  	  				PieChart_AWT chart1 = new PieChart_AWT(dList3[x], dList3[y], title, names3[x], names3[y]);
+  	  				chart1.pack();
+  	  				RefineryUtilities.centerFrameOnScreen(chart1);
+  	  				chart1.setVisible(true);
+	 		}		
+	 	}
+  	  		
+  	  		
+  	  		//pieModel(dList3, names3);
   		}
 	}
 	
 	public static double[] choosegraph(double a, double b, double c, double d, double e) throws Exception{
+//		System.out.println(a+", "+b+", "+c+", "+d+", "+e);
+		
 		weka.core.Attribute Attribute1 = new Attribute("firstNumeric");
 		weka.core.Attribute Attribute2 = new Attribute("secondNumeric");
 		weka.core.Attribute Attribute3 = new Attribute("thirdNumeric");
@@ -533,8 +569,8 @@ public class ReadCSV {
 		
 		 ArrayList<String> types = new ArrayList<String>(4);
 		 types.add("B");
-		 types.add("L");
 		 types.add("S");
+		 types.add("L");
 		 types.add("P");
 		 weka.core.Attribute classAttribute = new Attribute("GraphTypes", types);
 		 
@@ -573,7 +609,7 @@ public class ReadCSV {
 		test.setDataset(trainingSet);
 		
 		double[] results = model.distributionForInstance(test);
-		
+
 		DecimalFormat df = new DecimalFormat("#.###");
 		
 		System.out.println("Bar Graph: " + df.format(results[0]*100) + "%");
@@ -686,7 +722,7 @@ public class ReadCSV {
 			info[1] =1;
 			
 			for(int x =0; x<data.length; x++){
-				info[2] +=divTen(data[x]);
+				info[3] +=divTen(data[x]);
 				}
 			
 		}
@@ -696,7 +732,7 @@ public class ReadCSV {
 			//how many times does one data set avg go into another
 			info[1] =data.length;
 			
-			info[3]= checkHighCor(data, 65);
+			info[2]= checkHighCor(data, 65);
 			
 		}
 		
@@ -705,8 +741,7 @@ public class ReadCSV {
 			
 
 		
-		//check avg difference between points
-		//check for size of outliers
+
 			
 			
 		
@@ -714,7 +749,7 @@ public class ReadCSV {
 //			System.out.print(info[x]+ "\t");
 //		}
 //		System.out.println();
-		
+		currentData = info;
 			return choosegraph(info[0], info[1], info[2], info[3], info[4]);
 
 	}
@@ -737,7 +772,7 @@ public class ReadCSV {
 		for(int x =0; x<data.length; x++){
 			sum +=data[x];
 		}
-		
+		sum = Math.rint(sum);
 		if(sum%10==0){
 			return 1;
 		}
@@ -852,7 +887,7 @@ public class ReadCSV {
 	}
 	*/
 	
-	
+	/*
 	public static void pieModel(double[][]list, String[] names) {
 	 	DecimalFormat df = new DecimalFormat("#.###");
 	 	
@@ -861,7 +896,7 @@ public class ReadCSV {
 	 	for(int x=0; x<list.length-1; x++) {
 	 		for(int y=x+1; y<list.length; y++) {
 	 			String title = names[x] + "Vs" + names[y];
-	 			//System.out.println("Reached here as well!");
+	 			System.out.println("Reached here as well!");
 	 			//System.out.println("Value of dList3 in x: " + list[0]);
   				//System.out.println("Value of dList3 in y: " + list[1]);
 	 			PieChart_AWT chart1 = new PieChart_AWT(list[x], list[y], title, names[x], names[y]);
@@ -871,7 +906,7 @@ public class ReadCSV {
 	 		}		
 	 	}
 	 }
-	 
+	 */
 	/*
 	public static void lineChart(double[][]list, String[] names) {
 		DecimalFormat df = new DecimalFormat("#.###");
@@ -938,12 +973,12 @@ public class ReadCSV {
 	
 	
     public static double[][] to2dDouble(String[][] list, char[] types){
-    	
-    	double[][] dList = new double[numD(types)][list[0].length-1];
+
+    	double[][] dList = new double[numD(types)][list[0].length];
     	int column =0;
     	for(int x =0; x<types.length;x++){
     		if(types[x]=='D'){
-    			dList[column] = arrayToDouble(list, 1, x);
+    			dList[column] = arrayToDouble(list, 0, x);
     			column++;
     		}
     	}
@@ -991,11 +1026,11 @@ public class ReadCSV {
     	
     	Arrays.sort(temp);
     	
-    	//System.out.println("The value of temp.length in interquartile is: " + temp.length);
+    	System.out.println("The value of temp.length in interquartile is: " + temp.length);
     	
-    	//for(int i=0; i<temp.length; i++) {
-    	//	System.out.println("Index in interquartile: " + i + "value is: " + temp[i]);
-    	//} 
+    	for(int i=0; i<temp.length; i++) {
+    		System.out.println("Index in interquartile: " + i + "value is: " + temp[i]);
+    	} 
     	 
     	if(temp.length % 2 == 0) {
     		middle = temp.length/2;
@@ -1049,11 +1084,11 @@ public class ReadCSV {
     	 
     	Arrays.sort(temp);
     	
-    	//for(int i=0; i<temp.length; i++) {
-    		//System.out.println("Index of this median array: " + i);
-    	//}
+    	for(int i=0; i<temp.length; i++) {
+    		System.out.println("Index of this median array: " + i);
+    	}
     	
-    	//System.out.println("Exited the median array loop");
+    	System.out.println("Exited the median array loop");
     	
     	if(temp.length % 2 == 0) {
     		median = (temp[temp.length/2] + temp[temp.length/2 + 1])/2;
@@ -1123,9 +1158,9 @@ public class ReadCSV {
     		outlierlist.add(i, 0.0);
     	} 
     	
-    	//for(int i=0; i<temp.length; i++) {
-    		//System.out.println("Value of temp index " + i + " in extreme: " + temp[i]);
-    	//}
+    	for(int i=0; i<temp.length; i++) {
+    		System.out.println("Value of temp index " + i + " in extreme: " + temp[i]);
+    	}
     	
     	//lower_inner_fence = firstq - (1.5 * iqr);
     	//upper_inner_fence = thirdq + (1.5 * iqr);
@@ -1137,7 +1172,7 @@ public class ReadCSV {
     	for(int i=0; i<temp.length; i++) {
     		if(temp[i] >= upper_outer_fence || temp[i] <= lower_outer_fence) {
     			outlierlist.add(i, temp[i]); 
-    			//System.out.println("Outlier value at index " + i + "value is: " + temp[i]);
+    			System.out.println("Outlier value at index " + i + "value is: " + temp[i]);
     			//counter++;
     		}
     	}
@@ -1168,9 +1203,9 @@ public class ReadCSV {
     		outlierlist.add(i, 0.0);
     	}
     	
-    	//for(int i=0; i<temp.length; i++) {
-    		//System.out.println("Value of temp index " + i + " in mild: " + temp[i]);
-    	//}
+    	for(int i=0; i<temp.length; i++) {
+    		System.out.println("Value of temp index " + i + " in mild: " + temp[i]);
+    	}
     	
     	lower_inner_fence = firstq - (1.5 * iqr);
     	upper_inner_fence = thirdq + (1.5 * iqr);
@@ -1289,10 +1324,10 @@ public class ReadCSV {
     	//Arrays.sort(temp);
     	double min = temp[0];
     	
-    	//System.out.println("Value of temp min at 0 is: " + temp[0]);
+    	System.out.println("Value of temp min at 0 is: " + temp[0]);
     	
     	for(int i=1; i<temp.length; i++) {
-    		//System.out.println("Value of temp min at " + i + " is: " + temp[i]);
+    		System.out.println("Value of temp min at " + i + " is: " + temp[i]);
     		
     		if(temp[i] < min) {
     			min = temp[i];
@@ -1300,7 +1335,7 @@ public class ReadCSV {
     		
     	}
     	//temp = x;
-    	//System.out.println("The minimum value is: " + min);
+    	System.out.println("The minimum value is: " + min);
     	return min; 
     			
     }
@@ -1310,10 +1345,10 @@ public class ReadCSV {
     	//Arrays.sort(temp);
     	double max = temp[0];
     	
-    	//System.out.println("Value of temp max at 0 is: " + temp[0]);
+    	System.out.println("Value of temp max at 0 is: " + temp[0]);
     	
     	for(int i=1; i<temp.length; i++) {
-    		//System.out.println("Value of temp max at " + i + " is: " + temp[i]);
+    		System.out.println("Value of temp max at " + i + " is: " + temp[i]);
     		
     		if(temp[i] > max) {
     			max = temp[i];
@@ -1321,7 +1356,7 @@ public class ReadCSV {
     		
     	}
     	
-    	//System.out.println("The maximum value is: " + max);
+    	System.out.println("The maximum value is: " + max);
     	//temp = x;
     	//System.out.println("The max value is: ");
     	return max;		
@@ -1347,7 +1382,8 @@ public class ReadCSV {
     }
     
     public static double[] arrayToDouble(String[][] list, int start, int row){
-    	double[] temp = new double[list[row].length-start-1];
+  
+    	double[] temp = new double[list[row].length-start];
     	for(int x = 0; x<temp.length; x++){
     		if((!list[row][start+x].equals(null))&&(!Character.isLetter(list[row][start+x].charAt(0)))){
 
@@ -1357,12 +1393,15 @@ public class ReadCSV {
     		}
 
     	}
+
     	return temp;
     }
     
  
     
     public static String[][] csvReader(File csvFile, int max){
+    	
+    	
     	BufferedReader br = null;
     	String line = "";
     	String cvsSplitBy = ",";
